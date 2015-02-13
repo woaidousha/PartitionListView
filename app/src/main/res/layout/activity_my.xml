@@ -1,4 +1,4 @@
-<org.bean.widget.DragLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -20,15 +20,17 @@
 
     <TextView
         android:id="@+id/menu_1"
-        android:layout_width="match_parent"
+        android:layout_width="150dp"
         android:layout_height="match_parent"
         android:text="menu1"
-        android:background="#55321321"/>
+        android:background="@android:color/background_dark"
+        android:layout_gravity="left"/>
 
     <TextView
         android:id="@+id/menu_2"
-        android:layout_width="match_parent"
+        android:layout_width="100dp"
         android:layout_height="match_parent"
         android:text="menu2"
-        android:background="#55123456"/>
-</org.bean.widget.DragLayout>
+        android:background="@android:color/background_light"
+        android:layout_gravity="right"/>
+</android.support.v4.widget.DrawerLayout>

@@ -1,23 +1,29 @@
 package org.bean.widget;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.FrameLayout;
+import android.view.ViewGroup;
 
-public class DragLayout extends FrameLayout {
+public class DragLayout extends ViewGroup {
 
     private static final int INDEX_CONTENT_VIEW = 0;
     private static final int INDEX_LEFT_MENU = 1;
     private static final int INDEX_RIGHT_MENU = 2;
 
     private static final int MIN_DRAWER_MARGIN = 64;
+
+    private static final int[] LAYOUT_ATTRS = new int[] {
+            android.R.attr.layout_gravity
+    };
 
     private GestureDetectorCompat mGestureDetector;
     private ViewDragHelper mDragHelper;
@@ -36,11 +42,13 @@ public class DragLayout extends FrameLayout {
 
         @Override
         public int clampViewPositionHorizontal(View child, int left, int dx) {
-            Log.d("lyl", "[clampViewPositionHorizontal] left : " + left + ", mCapturedView:" + dx);
+            Log.d("lyl", "[clampViewPositionHorizontal] left : " + left + ", dx:" + dx + ", child :" + child.getClass().getName());
             if (child == mLeftMenu) {
+                Log.d("lyl", "[clampViewPositionHorizontal] left menu " + Math.max(-child.getWidth(), Math.min(left, 0)));
                 return Math.max(-child.getWidth(), Math.min(left, 0));
             } else if (child == mRightMenu) {
                 final int width = getWidth();
+                Log.d("lyl", "[clampViewPositionHorizontal] right menu " + Math.max(width - child.getWidth(), Math.min(left, width)));
                 return Math.max(width - child.getWidth(), Math.min(left, width));
             }
             return 0;
@@ -163,13 +171,13 @@ public class DragLayout extends FrameLayout {
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
 
             if (i == INDEX_CONTENT_VIEW) {
-                child.layout(left + lp.leftMargin, top + lp.topMargin, left + lp.leftMargin + child.getMeasuredWidth(),
-                        top + lp.topMargin + child.getMeasuredHeight());
+                child.layout(lp.leftMargin, lp.topMargin, lp.leftMargin + child.getMeasuredWidth(),
+                        lp.topMargin + child.getMeasuredHeight());
             } else if (i == INDEX_LEFT_MENU){
-                child.layout(-child.getMeasuredWidth() - lp.rightMargin, top + lp.topMargin, 0,
+                child.layout(-child.getMeasuredWidth(), top + lp.topMargin, 0,
                         top + lp.topMargin + child.getMeasuredHeight());
             } else if (i == INDEX_RIGHT_MENU){
-                child.layout(width + lp.leftMargin, top + lp.topMargin, width + child.getWidth() + lp.leftMargin,
+                child.layout(width, top + lp.topMargin, width + child.getWidth(),
                         top + lp.topMargin + child.getMeasuredHeight());
             }
         }
@@ -199,7 +207,7 @@ public class DragLayout extends FrameLayout {
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
         int state = mDragHelper.getViewDragState();
-        View view = mDragHelper.findTopChildUnder((int) ev.getX(), (int) ev.getY());
+        View view = mDragHelper.getCapturedView();
         Log.d("lyl", "[onTouchEvent] view : " + (view == null ? " null " : view.getClass().getName()));
         Log.d("lyl", "[onTouchEvent] action:" + ev.getAction() + ",state : " + state);
         Log.d("lyl", "[onTouchEvent] slop:" + mDragHelper.getTouchSlop());
@@ -208,5 +216,65 @@ public class DragLayout extends FrameLayout {
         return true;
     }
 
+    public static class LayoutParams extends ViewGroup.MarginLayoutParams {
 
+        public int gravity = Gravity.NO_GRAVITY;
+        float onScreen;
+        boolean isPeeking;
+        boolean knownOpen;
+
+        public LayoutParams(Context c, AttributeSet attrs) {
+            super(c, attrs);
+
+            final TypedArray a = c.obtainStyledAttributes(attrs, LAYOUT_ATTRS);
+            this.gravity = a.getInt(0, Gravity.NO_GRAVITY);
+            a.recycle();
+        }
+
+        public LayoutParams(int width, int height) {
+            super(width, height);
+        }
+
+        public LayoutParams(int width, int height, int gravity) {
+            this(width, height);
+            this.gravity = gravity;
+        }
+
+        public LayoutParams(LayoutParams source) {
+            super(source);
+            this.gravity = source.gravity;
+        }
+
+        public LayoutParams(ViewGroup.LayoutParams source) {
+            super(source);
+        }
+
+        public LayoutParams(ViewGroup.MarginLayoutParams source) {
+            super(source);
+        }
+    }
+
+    @Override
+    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+        return new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT);
+    }
+
+    @Override
+    protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
+        return p instanceof LayoutParams
+               ? new LayoutParams((LayoutParams) p)
+               : p instanceof ViewGroup.MarginLayoutParams
+                 ? new LayoutParams((MarginLayoutParams) p)
+                 : new LayoutParams(p);
+    }
+
+    @Override
+    protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
+        return p instanceof LayoutParams && super.checkLayoutParams(p);
+    }
+
+    @Override
+    public ViewGroup.LayoutParams generateLayoutParams(AttributeSet attrs) {
+        return new LayoutParams(getContext(), attrs);
+    }
 }
